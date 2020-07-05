@@ -1,5 +1,5 @@
 ARG VERSION
-FROM --platform=$TARGETPLATFORM akfish/gnuradio-source:${VERSION}
+FROM --platform=$TARGETPLATFORM akfish/gnuradio-base:${VERSION}
 ARG TARGETPLATFORM
 
 ENV num_threads 2
@@ -12,11 +12,11 @@ RUN mkdir build && cd build
 WORKDIR /opt/volk/build
 COPY configure_volk.sh configure.sh
 RUN chmod +x ./configure.sh
-RUN ./configure.sh ${TARGETPLATFORM} | tee -a /var/log/volk-build.log
-RUN make -j${num_threads} | tee -a /var/log/volk-build.log
-RUN make install | tee -a /var/log/volk-build.log
+RUN ./configure.sh ${TARGETPLATFORM} 
+RUN make -j${num_threads}
+RUN make install
 # RUN make test
-RUN ldconfig | tee -a /var/log/volk-build.log
+RUN ldconfig
 
 WORKDIR /opt/gnuradio
 RUN git status
@@ -35,16 +35,16 @@ RUN cmake \
     -DENABLE_GR_FILTER=True \
     -DENABLE_GR_ANALOG=True \
     -DENABLE_GR_AUDIO=True \
-    ../ | tee -a /var/log/gnuradio-build.log
+    ../
     # -DENABLE_GR_QTGUI=OFF \
     # -DENABLE_GRC=OFF \
     # -DENABLE_GR_UHD=OFF \
     # -DENABLE_DOXYGEN=OFF \
     # -DENABLE_SPHINX=OFF \
     # -DENABLE_INTERNAL_VOLK=OFF \
-RUN make -j${num_threads} | tee -a /var/log/gnuradio-build.log
-RUN make install | tee -a /var/log/gnuradio-build.log
-RUN ldconfig | tee -a /var/log/gnuradio-build.log
+RUN make -j${num_threads}
+RUN make install
+RUN ldconfig
 # Link built python packages
 RUN ln -s /usr/local/lib/python3/dist-packages/* /usr/local/lib/python3.6/dist-packages
 RUN python3 --version
