@@ -30,7 +30,7 @@ VERSION=${VERSION:-latest}
 
 echo "Building akfish/$IMAGE_NAME:$VERSION for $PLATFORM"
 
-if [ -z $SHOULD_PUSH ]; then
+if [ $SHOULD_PUSH == 1 ]; then
   BUILD_FLAGS="--push"
   echo "Image will be pushed to Docker Hub after it's built."
 else
