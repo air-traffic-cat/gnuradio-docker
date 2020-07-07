@@ -1,4 +1,5 @@
 ARG VERSION
+ARG TARGETPLATFORM
 FROM --platform=$TARGETPLATFORM akfish/gnuradio-base:${VERSION}
 ARG TARGETPLATFORM
 
@@ -35,6 +36,7 @@ RUN cmake \
     -DENABLE_GR_FILTER=True \
     -DENABLE_GR_ANALOG=True \
     -DENABLE_GR_AUDIO=True \
+    -DENABLE_GR_ZEROMQ=True \
     ../
     # -DENABLE_GR_QTGUI=OFF \
     # -DENABLE_GRC=OFF \
