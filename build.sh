@@ -2,26 +2,42 @@
 
 function print_usage {
   echo "Usage:"
-  echo "  build.sh -i <image_name> [-p platform_list] [-n]"
+  echo "  build.sh -i <image_name> [-p platform_list] [-n] [-r git_version_range]"
   echo "  -n Load built image instead of pushing"
+  echo "  -r Check if the image is changed during specified git version range (default to HEAD). "
+  echo "     If nothing is changed, the build process is skipped."
 }
 
 IMAGE_NAME=""
 SHOULD_PUSH=1
 PLATFORM="linux/amd64,linux/arm,linux/arm64"
+GIT_RANGE="HEAD"
 
-while getopts 'i:np:' flag; do
+# Parsing arguments
+while getopts 'i:np:r:' flag; do
   case "${flag}" in
     i) IMAGE_NAME="${OPTARG}" ;;
     n) SHOULD_PUSH=0 ;;
     p) PLATFORM="${OPTARG}" ;;
+    r) GIT_RANGE="${OPTARG}" ;;
   esac
 done
 
+# Check if the image_name is valid
 if [ ! -d "$IMAGE_NAME" ]; then
   echo "'$IMAGE_NAME' is not a valid image name"
   print_usage
   exit 1
+fi
+
+# Check if the source files for the image are changed
+echo "git diff-tree --no-commit-id --name-only -r $GIT_RANGE | grep -c \"^$IMAGE_NAME/\""
+CHANGED_COUNT=$(git diff-tree --no-commit-id --name-only -r $GIT_RANGE | grep -c "^$IMAGE_NAME/")
+
+echo $CHANGED_COUNT
+if [ $CHANGED_COUNT -eq 0 ]; then
+  echo "Image '$IMAGE_NAME' not changed in $GIT_RANGE. Nothing to build."
+  exit 0
 fi
 
 TAG=$(git tag --list 'v*' --points-at HEAD)
