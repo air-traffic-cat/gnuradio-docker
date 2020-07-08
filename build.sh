@@ -65,9 +65,14 @@ if [ $BUILD_MANIFEST == 1 ]; then
 
   pushd $IMAGE_NAME 
   docker manifest create $MANIFEST_FLAGS
+  RET=$?
+  if [ $RET -ne 0 ]; then
+    echo "Build manifest failed (exit code = $RET)"
+    exit 1
+  fi
   popd
 
-   if [ $SHOULD_PUSH == 1 ]; then
+  if [ $SHOULD_PUSH == 1 ]; then
     echo "Pushing manifest..."
     docker manifest push "akfish/$IMAGE_NAME:$VERSION"
   else
@@ -107,7 +112,14 @@ else
   BUILD_FLAGS="$BUILD_FLAGS --build-arg TARGETPLATFORM=$PLATFORM"
   pushd $IMAGE_NAME 
   docker build $BUILD_FLAGS .
+
+  RET=$?
+  if [ $RET -ne 0 ]; then
+    echo "Build image failed (exit code = $RET)"
+    exit 1
+  fi
   popd
+
   if [ $SHOULD_PUSH == 1 ]; then
     echo "Image will be pushed to Docker Hub."
     docker push "akfish/$IMAGE_NAME:$VERSION-${PLATFORM//\//-}"
