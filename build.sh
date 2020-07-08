@@ -2,10 +2,11 @@
 
 function print_usage {
   echo "Usage:"
-  echo "  build.sh -i <image_name> [-p platform_list] [-n] [-r git_version_range]"
+  echo "  build.sh -i <image_name> [-p platform_list] [-n] [-r git_version_range] -m"
   echo "  -n Load built image instead of pushing"
   echo "  -r Check if the image is changed during specified git version range (default to HEAD). "
   echo "     If nothing is changed, the build process is skipped."
+  echo "  -m Build manifest"
 }
 
 IMAGE_NAME=""
@@ -13,15 +14,17 @@ SHOULD_PUSH=1
 PLATFORM="linux/amd64,linux/arm,linux/arm64"
 GIT_RANGE="HEAD"
 FORCED=0
+BUILD_MANIFEST=0
 
 # Parsing arguments
-while getopts 'fi:np:r:' flag; do
+while getopts 'fi:np:r:m' flag; do
   case "${flag}" in
     f) FORCED=1 ;;
     i) IMAGE_NAME="${OPTARG}" ;;
     n) SHOULD_PUSH=0 ;;
     p) PLATFORM="${OPTARG}" ;;
     r) GIT_RANGE="${OPTARG}" ;;
+    m) BUILD_MANIFEST=1 ;;
   esac
 done
 
@@ -51,6 +54,28 @@ fi
 TAG=$(git tag --list 'v*' --points-at HEAD)
 VERSION=${TAG:1}
 VERSION=${VERSION:-latest}
+
+if [ $BUILD_MANIFEST == 1 ]; then
+  echo "Building manifest akfish/$IMAGE_NAME:$VERSION for $PLATFORM"
+  MANIFEST_FLAGS="akfish/$IMAGE_NAME:$VERSION"
+  IFS=',' read -ra P <<< "$PLATFORM"
+  for i in "${P[@]}"; do
+    MANIFEST_FLAGS="$MANIFEST_FLAGS --amend akfish/$IMAGE_NAME:$VERSION-${i//\//-}"
+  done
+
+  pushd $IMAGE_NAME 
+  docker manifest create $MANIFEST_FLAGS
+  popd
+
+   if [ $SHOULD_PUSH == 1 ]; then
+    echo "Pushing manifest..."
+    docker manifest push "akfish/$IMAGE_NAME:$VERSION"
+  else
+    echo "Manifest will not be pushed"
+  fi
+
+  exit 0
+fi
 
 echo "Building akfish/$IMAGE_NAME:$VERSION for $PLATFORM"
 
