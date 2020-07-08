@@ -1,5 +1,4 @@
 #!/bin/bash
-set -euxo pipefail 
 
 function print_usage {
   echo "Usage:"
@@ -41,8 +40,7 @@ fi
 # Check if the source files for the image are changed
 echo "git diff-tree --no-commit-id --name-only -r $GIT_RANGE | grep -c \"^$IMAGE_NAME/\""
 CHANGED_COUNT=$(git diff-tree --no-commit-id --name-only -r $GIT_RANGE | grep -c "^$IMAGE_NAME/")
-
-echo $CHANGED_COUNT
+echo $?
 if [ $CHANGED_COUNT -eq 0 ]; then
   echo "Image '$IMAGE_NAME' not changed in $GIT_RANGE. Nothing to build."
   if [ $FORCED == 1 ]; then
@@ -76,6 +74,11 @@ if [ $BUILD_MANIFEST == 1 ]; then
   if [ $SHOULD_PUSH == 1 ]; then
     echo "Pushing manifest..."
     docker manifest push "akfish/$IMAGE_NAME:$VERSION"
+    RET=$?
+    if [ $RET -ne 0 ]; then
+      echo "Push failed (exit code = $RET)"
+      exit 1
+    fi
   else
     echo "Manifest will not be pushed"
   fi
@@ -104,6 +107,12 @@ if [ $PLATFORM_COUNT -ne 0 ]; then
   docker buildx build \
     $BUILD_FLAGS \
     .
+
+  RET=$?
+  if [ $RET -ne 0 ]; then
+    echo "Docker buildx failed (exit code = $RET)"
+    exit 1
+  fi
   popd
 else
   echo "Single platform build"
@@ -124,6 +133,11 @@ else
   if [ $SHOULD_PUSH == 1 ]; then
     echo "Image will be pushed to Docker Hub."
     docker push "akfish/$IMAGE_NAME:$VERSION-${PLATFORM//\//-}"
+    RET=$?
+    if [ $RET -ne 0 ]; then
+      echo "Docker push failed (exit code = $RET)"
+      exit 1
+    fi
   else
     echo "Image will not be pushed."
   fi
