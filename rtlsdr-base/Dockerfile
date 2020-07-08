@@ -30,5 +30,5 @@ RUN make
 RUN make install
 RUN ldconfig
 
-# RUN pip3 install pyrtlsdr
-# RUN python3 -c "from rtlsdr import *"
+RUN pip3 install pyrtlsdr
+RUN python3 -c "from rtlsdr import *"

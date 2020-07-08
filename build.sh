@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euxo pipefail 
 
 function print_usage {
   echo "Usage:"
